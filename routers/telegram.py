@@ -12,7 +12,8 @@ HELP_TEXT = (
     "/get &lt;id&gt; - информация о товаре\n"
     "/add &lt;описание&gt; - добавить товар (Claude разберёт текст)\n"
     "/delete &lt;id&gt; - удалить товар\n\n"
-    "Или просто напиши описание товара — я добавлю его автоматически."
+    "Напиши описание товара — добавлю в каталог.\n"
+    "Задай вопрос со знаком ? — отвечу как консультант."
 )
 
 
@@ -113,6 +114,14 @@ async def _cmd_delete(chat_id: int, args: str) -> None:
     else:
         await _send(chat_id, f"Товар #{product_id} удалён.")
 
+async def _cmd_chat(chat_id: int, text: str) -> None:
+    products = await strapi_service.get_products()
+    try:
+        answer = await claude_service.chat_response(text, products)
+        await _send(chat_id, answer)
+    except Exception as e:
+        await _send(chat_id, f"Не смог ответить: {e}")
+
 
 @router.post("/telegram")
 async def telegram_webhook(request: Request):
@@ -148,8 +157,16 @@ async def telegram_webhook(request: Request):
     elif cmd == "/delete":
         await _cmd_delete(chat_id, args)
 
+
     elif cmd is None:
-        await _cmd_add(chat_id, args)
+
+        if args.endswith("?"):
+
+            await _cmd_chat(chat_id, args)
+
+        else:
+
+            await _cmd_add(chat_id, args)
 
     else:
         await _send(chat_id, f"Неизвестная команда. {HELP_TEXT}")

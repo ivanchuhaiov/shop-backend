@@ -6,12 +6,12 @@ from config import TELEGRAM_TOKEN
 router = APIRouter(prefix="/webhook", tags=["telegram"])
 
 HELP_TEXT = (
-    "👋 Привет! Я бот магазина.\n\n"
+    "Привет! Я бот магазина.\n\n"
     "<b>Команды:</b>\n"
     "/list — список всех товаров\n"
-    "/get &lt;id&gt; — информация о товаре\n"
-    "/add &lt;описание&gt; — добавить товар (Claude разберёт текст)\n"
-    "/delete &lt;id&gt; — удалить товар\n\n"
+    "/get &lt;id&gt; - информация о товаре\n"
+    "/add &lt;описание&gt; - добавить товар (Claude разберёт текст)\n"
+    "/delete &lt;id&gt; - удалить товар\n\n"
     "Или просто напиши описание товара — я добавлю его автоматически."
 )
 
@@ -31,12 +31,12 @@ def _format_product(p: dict, show_id: bool = True) -> str:
 
     lines = []
     if show_id:
-        lines.append(f"🆔 ID: {pid}")
+        lines.append(f"ID: {pid}")
     lines += [
-        f"📦 <b>{name}</b>",
-        f"💰 Цена: {price} грн",
-        f"📁 Категория: {category}",
-        f"📝 {description}",
+        f"<b>{name}</b>",
+        f"Цена: {price} грн",
+        f"Категория: {category}",
+        f"{description}",
     ]
     return "\n".join(lines)
 
@@ -46,10 +46,10 @@ async def _cmd_list(chat_id: int) -> None:
     products = result.get("data", [])
 
     if not products:
-        await _send(chat_id, "📭 Товаров пока нет.")
+        await _send(chat_id, "Товаров пока нет.")
         return
 
-    lines = [f"📦 <b>Товаров в магазине: {len(products)}</b>\n"]
+    lines = [f"<b>Товаров в магазине: {len(products)}</b>\n"]
     for p in products:
         pid = p.get("id", "?")
         name = p.get("name") or "—"
@@ -61,14 +61,14 @@ async def _cmd_list(chat_id: int) -> None:
 
 async def _cmd_get(chat_id: int, args: str) -> None:
     if not args.isdigit():
-        await _send(chat_id, "⚠️ Укажи числовой ID: /get 5")
+        await _send(chat_id, "Укажи числовой ID: /get 5")
         return
 
     result = await strapi_service.get_product(int(args))
     product = result.get("data")
 
     if not product:
-        await _send(chat_id, f"❌ Товар с ID {args} не найден.")
+        await _send(chat_id, f"Товар с ID {args} не найден.")
         return
 
     await _send(chat_id, _format_product(product))
@@ -76,15 +76,15 @@ async def _cmd_get(chat_id: int, args: str) -> None:
 
 async def _cmd_add(chat_id: int, description: str) -> None:
     if not description:
-        await _send(chat_id, "⚠️ Напиши описание товара после /add")
+        await _send(chat_id, "Напиши описание товара после /add")
         return
 
-    await _send(chat_id, "⏳ Claude разбирает описание...")
+    await _send(chat_id, "Claude разбирает описание...")
 
     try:
         product_data = await claude_service.parse_product(description)
     except Exception as e:
-        await _send(chat_id, f"❌ Claude не смог разобрать текст: {e}")
+        await _send(chat_id, f"Claude не смог разобрать текст: {e}")
         return
 
     result = await strapi_service.create_product(product_data)
@@ -96,22 +96,22 @@ async def _cmd_add(chat_id: int, description: str) -> None:
 
     await _send(
         chat_id,
-        f"✅ Товар добавлен!\n\n{_format_product(saved)}",
+        f"Товар добавлен!\n\n{_format_product(saved)}",
     )
 
 
 async def _cmd_delete(chat_id: int, args: str) -> None:
     if not args.isdigit():
-        await _send(chat_id, "⚠️ Укажи числовой ID: /delete 5")
+        await _send(chat_id, "Укажи числовой ID: /delete 5")
         return
 
     product_id = int(args)
     result = await strapi_service.delete_product(product_id)
 
     if result.get("error"):
-        await _send(chat_id, f"❌ Не удалось удалить товар #{product_id}.")
+        await _send(chat_id, f"Не удалось удалить товар #{product_id}.")
     else:
-        await _send(chat_id, f"🗑 Товар #{product_id} удалён.")
+        await _send(chat_id, f"Товар #{product_id} удалён.")
 
 
 @router.post("/telegram")
@@ -125,7 +125,6 @@ async def telegram_webhook(request: Request):
     if not text or not chat_id:
         return {"ok": True}
 
-    # Разбираем команду и аргументы
     if text.startswith("/"):
         parts = text.split(maxsplit=1)
         cmd = parts[0].lower()
@@ -150,10 +149,9 @@ async def telegram_webhook(request: Request):
         await _cmd_delete(chat_id, args)
 
     elif cmd is None:
-        # Свободный текст — добавляем как товар через Claude
         await _cmd_add(chat_id, args)
 
     else:
-        await _send(chat_id, f"❓ Неизвестная команда. {HELP_TEXT}")
+        await _send(chat_id, f"Неизвестная команда. {HELP_TEXT}")
 
     return {"ok": True}

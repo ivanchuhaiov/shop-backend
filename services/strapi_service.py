@@ -12,34 +12,38 @@ async def get_products():
         return response.json()
 
 async def get_product(product_id: int):
-    # Сначала получаем все товары и ищем по числовому id
     result = await get_products()
     products = result.get("data", [])
+
     for p in products:
         if p.get("id") == product_id:
             return {"data": p}
+
     return {"data": None}
 
 async def create_product(data: dict):
     async with httpx.AsyncClient() as client:
+
         response = await client.post(
             f"{STRAPI_URL}/api/products",
             headers=HEADERS,
             json={"data": data}
         )
+
         return response.json()
 
 async def update_product(product_id: int, data: dict):
-    # Находим documentId по числовому id
     result = await get_products()
     products = result.get("data", [])
     doc_id = None
+
     for p in products:
         if p.get("id") == product_id:
             doc_id = p.get("documentId")
             break
     if not doc_id:
         return {"error": "Not found"}
+
     async with httpx.AsyncClient() as client:
         response = await client.put(
             f"{STRAPI_URL}/api/products/{doc_id}",
@@ -49,16 +53,17 @@ async def update_product(product_id: int, data: dict):
         return response.json()
 
 async def delete_product(product_id: int):
-    # Находим documentId по числовому id
     result = await get_products()
     products = result.get("data", [])
     doc_id = None
+
     for p in products:
         if p.get("id") == product_id:
             doc_id = p.get("documentId")
             break
     if not doc_id:
         return {"error": "Not found"}
+
     async with httpx.AsyncClient() as client:
         response = await client.delete(
             f"{STRAPI_URL}/api/products/{doc_id}",

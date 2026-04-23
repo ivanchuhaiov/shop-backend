@@ -8,7 +8,10 @@ _client: anthropic.AsyncAnthropic | None = None
 def _get_client() -> anthropic.AsyncAnthropic:
     global _client
     if _client is None:
-        _client = anthropic.AsyncAnthropic(api_key=CLAUDE_API_KEY)
+        import os
+        key = CLAUDE_API_KEY or os.getenv("ANTHROPIC_API_KEY") or os.getenv("CLAUDE_API_KEY")
+        print(f"DEBUG: API key starts with: {key[:10] if key else 'EMPTY'}")
+        _client = anthropic.AsyncAnthropic(api_key=key if key else None)
     return _client
 
 

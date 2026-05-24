@@ -7,22 +7,22 @@ from config import CLAUDE_API_KEY
 _client: anthropic.AsyncAnthropic | None = None
 
 _PARSE_SYSTEM = (
-    "Ты помощник интернет-магазина. Извлеки из текста информацию о товаре "
-    "и верни ТОЛЬКО валидный JSON без markdown и без пояснений.\n"
-    "Формат:\n"
-    '{"name": "название", "price": 0.0, "description": "описание", '
-    '"category": "категория", "specs": {}}\n'
-    "Правила: если цена не указана - 0; категорию угадай по контексту; "
-    "верни ТОЛЬКО JSON."
+    "You are an online store assistant. Extract product information from the text "
+    "and return ONLY valid JSON without markdown or explanation.\n"
+    "Format:\n"
+    '{"name": "product name", "price": 0.0, "description": "description", '
+    '"category": "category", "specs": {}}\n'
+    "Rules: if price is not mentioned — use 0; guess category from context; "
+    "return ONLY JSON."
 )
 
 _CHAT_SYSTEM = (
-    "Ты вежливый и дружелюбный консультант интернет-магазина. "
-    "Помогай покупателям: отвечай на вопросы о товарах, сравнивай, советуй что выбрать, "
-    "рассказывай о характеристиках из каталога. "
-    "Если товара нет в каталоге - честно скажи об этом. "
-    "Если вопрос не связан с магазином - вежливо перенаправь к теме магазина. "
-    "Отвечай на том же языке что и покупатель. Будь кратким и по делу."
+    "You are a polite and friendly online store consultant. "
+    "Help customers: answer questions about products, compare items, give recommendations, "
+    "describe specifications from the catalog. "
+    "If a product is not in the catalog — say so honestly. "
+    "If the question is not related to the store — politely redirect to store topics. "
+    "Always respond in English. Be concise and to the point."
 )
 
 
@@ -68,7 +68,7 @@ async def chat_response(message: str, products: dict, history: List[dict] = []) 
 
     messages.append({
         "role": "user",
-        "content": f"Каталог товаров:\n{products_text}\n\nВопрос: {message}",
+        "content": f"Product catalog:\n{products_text}\n\nQuestion: {message}",
     })
 
     response = await _get_client().messages.create(
